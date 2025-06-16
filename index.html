@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>GreenGPT - Chatbot z limitem generowania obrazów</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background-color: #222;
+    color: #eee;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    margin: 0;
+  }
+  header {
+    background-color: #2e7d32;
+    padding: 15px;
+    text-align: center;
+    font-size: 24px;
+    font-weight: bold;
+    color: #d0f0c0;
+    user-select: none;
+  }
+  #chat {
+    flex: 1;
+    padding: 10px;
+    overflow-y: auto;
+    background-color: #333;
+  }
+  .message {
+    margin: 5px 0;
+    max-width: 70%;
+    padding: 8px 12px;
+    border-radius: 10px;
+    clear: both;
+  }
+  .user {
+    background-color: #388e3c;
+    color: white;
+    float: right;
+  }
+  .bot {
+    background-color: #4caf50;
+    float: left;
+  }
+  #inputArea {
+    display: flex;
+    padding: 10px;
+    background-color: #111;
+  }
+  #input {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+  }
+  #sendBtn {
+    margin-left: 10px;
+    padding: 10px 15px;
+    font-size: 16px;
+    background-color: #2e7d32;
+    border: none;
+    border-radius: 5px;
+    color: white;
+    cursor: pointer;
+  }
+  #sendBtn:hover {
+    background-color: #1b5e20;
+  }
+  .bot img {
+    max-width: 100%;
+    border-radius: 10px;
+    margin-top: 5px;
+  }
+</style>
+</head>
+<body>
+
+<header>GreenGPT</header>
+
+<div id="chat"></div>
+
+<div id="inputArea">
+  <input type="text" id="input" placeholder="Napisz coś..." autocomplete="off" />
+  <button id="sendBtn">Wyślij</button>
+</div>
+
+<script>
+  const chat = document.getElementById('chat');
+  const input = document.getElementById('input');
+  const sendBtn = document.getElementById('sendBtn');
+
+  let imagesGenerated = 0;
+  let cooldownActive = false;
+  let cooldownTimeout;
+  let cooldownSeconds = 300; // 5 minut
+
+  function formatDate(date) {
+    const months = [
+      'stycznia', 'lutego', 'marca', 'kwietnia', 'maja', 'czerwca',
+      'lipca', 'sierpnia', 'września', 'października', 'listopada', 'grudnia'
+    ];
+    return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
+  }
+
+  function addMessage(text, className, isHtml = false) {
+    const msg = document.createElement('div');
+    if (isHtml) {
+      msg.innerHTML = text;
+    } else {
+      msg.textContent = text;
+    }
+    msg.className = 'message ' + className;
+    chat.appendChild(msg);
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  function startCooldown() {
+    cooldownActive = true;
+    let remaining = cooldownSeconds;
+    addMessage(`Limit 3 obrazów osiągnięty. Odczekaj ${formatTime(remaining)}, zanim wygenerujesz kolejny obraz.`, 'bot');
+
+    cooldownTimeout = setInterval(() => {
+      remaining--;
+      if (remaining <= 0) {
+        cooldownActive = false;
+        clearInterval(cooldownTimeout);
+        addMessage('Możesz teraz ponownie generować obrazy.', 'bot');
+      } else {
+        // Aktualizacja wiadomości o odliczaniu (opcjonalne - dla uproszczenia tu tego nie robimy)
+      }
+    }, 1000);
+  }
+
+  function formatTime(seconds) {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}m ${s}s`;
+  }
+
+  function botReply(text) {
+    const lowerText = text.toLowerCase().trim();
+
+    // Symulacja generowania obrazów z limitem i cooldownem
+    if (lowerText.includes('wygeneruj obraz')) {
+      if (cooldownActive) {
+        addMessage('Musisz poczekać, zanim wygenerujesz kolejny obraz.', 'bot');
+        return;
+      }
+      if (imagesGenerated >= 3) {
+        startCooldown();
+        return;
+      }
+      imagesGenerated++;
+      addMessage('Generuję obraz, proszę czekać...', 'bot');
+      setTimeout(() => {
+        const images = [
+          'https://raw.githubusercontent.com/yourusername/yourrepo/main/sample-image1.jpg',
+          'https://raw.githubusercontent.com/yourusername/yourrepo/main/sample-image2.jpg',
+          'https://raw.githubusercontent.com/yourusername/yourrepo/main/sample-image3.jpg'
+        ];
+        // Pokaż obraz z tablicy na podstawie liczby wygenerowanych
+        const imageUrl = images[(imagesGenerated - 1) % images.length];
+        addMessage(`<img src="${imageUrl}" alt="Wygenerowany obraz" />`, 'bot', true);
+      }, 2000);
+      return;
+    }
+
+    // Powitania
+    const greetings = ['cześć', 'siema', 'witaj', 'hej', 'hello', 'yo'];
+    if (greetings.some(greet => lowerText.includes(greet))) {
+      addMessage('Cześć! Jak mogę Ci pomóc?', 'bot');
+      return;
+    }
+
+    // Pytanie o dzień/datę
+    if (lowerText.includes('który') && (lowerText.includes('dzień') || lowerText.includes('data'))) {
+      const today = new Date();
+      addMessage(`Dzisiaj jest ${formatDate(today)}.`, 'bot');
+      return;
+    }
+
+    // Pytanie o samopoczucie
+    if (lowerText.includes('jak się masz') || lowerText.includes('jak tam')) {
+      addMessage('Dziękuję, mam się dobrze!', 'bot');
+      return;
+    }
+
+    // Pytanie co potrafi
+    if (lowerText.includes('co potrafisz')) {
+      addMessage('Na razie odpowiadam na proste pytania i uczę się nowych rzeczy.', 'bot');
+      return;
+    }
+
+    // Kim jest bot
+    if (lowerText.includes('kim jesteś') || lowerText.includes('kto ty')) {
+      addMessage('Jestem GreenGPT, prostym chatbotem stworzonym przez Ciebie.', 'bot');
+      return;
+    }
+
+    // Pożegnania
+    const goodbyes = ['do widzenia', 'pa', 'cześć na razie', 'na razie', 'żegnaj'];
+    if (goodbyes.some(bye => lowerText.includes(bye))) {
+      addMessage('Do zobaczenia! Miłego dnia!', 'bot');
+      return;
+    }
+
+    // Reakcje na potwierdzenia i podziękowania
+    if (['okej', 'ok', 'spoko', 'fajnie', 'dzięki', 'dzieki', 'thx', 'thanks'].some(word => lowerText === word)) {
+      addMessage('Super, cieszę się!', 'bot');
+      return;
+    }
+
+    // Domyślna odpowiedź
+    addMessage('Nie rozumiem.', 'bot');
+  }
+
+  function sendMessage() {
+    const userText = input.value.trim();
+    if (!userText) return;
+    addMessage(userText, 'user');
+    botReply(userText);
+    input.value = '';
+    input.focus();
+  }
+
+  sendBtn.addEventListener('click', sendMessage);
+  input.addEventListener('keypress', e => {
+    if (e.key === 'Enter') sendMessage();
+  });
+</script>
+
+</body>
+  </html>
