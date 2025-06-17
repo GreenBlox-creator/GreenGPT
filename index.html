@@ -1,155 +1,134 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>GreenGPT - Chatbot z limitem generowania obrazów</title>
-<style>
-  body {
-    font-family: Arial, sans-serif;
-    background-color: #222;
-    color: #eee;
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    margin: 0;
-  }
-  header {
-    background-color: #2e7d32;
-    padding: 15px;
-    text-align: center;
-    font-size: 24px;
-    font-weight: bold;
-    color: #d0f0c0;
-    user-select: none;
-  }
-  #chat {
-    flex: 1;
-    padding: 10px;
-    overflow-y: auto;
-    background-color: #333;
-  }
-  .message {
-    margin: 5px 0;
-    max-width: 70%;
-    padding: 8px 12px;
-    border-radius: 10px;
-    clear: both;
-  }
-  .user {
-    background-color: #388e3c;
-    color: white;
-    float: right;
-  }
-  .bot {
-    background-color: #4caf50;
-    float: left;
-  }
-  #inputArea {
-    display: flex;
-    padding: 10px;
-    background-color: #111;
-  }
-  #input {
-    flex: 1;
-    padding: 10px;
-    border: none;
-    border-radius: 5px;
-    font-size: 16px;
-  }
-  #sendBtn {
-    margin-left: 10px;
-    padding: 10px 15px;
-    font-size: 16px;
-    background-color: #2e7d32;
-    border: none;
-    border-radius: 5px;
-    color: white;
-    cursor: pointer;
-  }
-  #sendBtn:hover {
-    background-color: #1b5e20;
-  }
-  .bot img {
-    max-width: 100%;
-    border-radius: 10px;
-    margin-top: 5px;
-  }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chatbot Roblox</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #121212;
+      color: white;
+      margin: 0;
+      padding: 0;
+    }
+    .chat-container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      height: 90vh;
+      display: flex;
+      flex-direction: column;
+    }
+    #chat {
+      flex-grow: 1;
+      overflow-y: auto;
+      margin-bottom: 10px;
+      padding-right: 5px;
+    }
+    .message {
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 10px;
+      max-width: 100%;
+    }
+    .user {
+      background-color: #2e2e2e;
+      text-align: right;
+    }
+    .bot {
+      background-color: #1e1e1e;
+      text-align: left;
+    }
+    form {
+      display: flex;
+      gap: 10px;
+    }
+    input[type="text"] {
+      flex-grow: 1;
+      padding: 10px;
+      font-size: 16px;
+      border: none;
+      border-radius: 5px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #66bb6a;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    pre {
+      background-color: #1b1b1b;
+      padding: 10px;
+      border-radius: 6px;
+      overflow-x: auto;
+      margin-top: 5px;
+    }
+    .copy-btn {
+      margin-top: 5px;
+      background-color: #66bb6a;
+      color: white;
+      border: none;
+      padding: 6px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .copy-btn:hover {
+      background-color: #4caf50;
+    }
+  </style>
 </head>
 <body>
+  <div class="chat-container">
+    <div id="chat"></div>
+    <form id="form">
+      <input type="text" id="input" autocomplete="off" placeholder="Napisz wiadomość..." required />
+      <button type="submit">Wyślij</button>
+    </form>
+  </div>
 
-<header>GreenGPT</header>
+  <script>
+    const chat = document.getElementById('chat');
+    const form = document.getElementById('form');
+    const input = document.getElementById('input');
 
-<div id="chat"></div>
+    function addMessage(text, className, isHtml = false) {
+      const msg = document.createElement('div');
+      msg.className = 'message ' + className;
 
-<div id="inputArea">
-  <input type="text" id="input" placeholder="Napisz coś..." autocomplete="off" />
-  <button id="sendBtn">Wyślij</button>
-</div>
+      if (isHtml) {
+        msg.innerHTML = text;
+      } else {
+        msg.textContent = text;
+      }
 
-<script>
-  const chat = document.getElementById('chat');
-  const input = document.getElementById('input');
-  const sendBtn = document.getElementById('sendBtn');
+      chat.appendChild(msg);
+      chat.scrollTop = chat.scrollHeight;
 
-  let imagesGenerated = 0;
-  let cooldownActive = false;
-  let cooldownTimeout;
-  const cooldownSeconds = 300; // 5 minut
-  let waitingForGameType = false;
-
-  function formatDate(date) {
-    const months = [
-      'stycznia', 'lutego', 'marca', 'kwietnia', 'maja', 'czerwca',
-      'lipca', 'sierpnia', 'września', 'października', 'listopada', 'grudnia'
-    ];
-    return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
-  }
-
-  function formatTime(seconds) {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m}m ${s}s`;
-  }
-
-  function addMessage(text, className, isHtml = false) {
-    const msg = document.createElement('div');
-    if (isHtml) {
-      msg.innerHTML = text;
-    } else {
-      msg.textContent = text;
+      msg.querySelectorAll('button.copy-btn').forEach(button => {
+        button.addEventListener('click', () => {
+          const code = button.previousElementSibling.textContent;
+          navigator.clipboard.writeText(code).then(() => {
+            button.textContent = 'Skopiowano!';
+            setTimeout(() => button.textContent = 'Skopiuj kod', 2000);
+          });
+        });
+      });
     }
-    msg.className = 'message ' + className;
-    chat.appendChild(msg);
-    chat.scrollTop = chat.scrollHeight;
-  }
 
-  function startCooldown() {
-    cooldownActive = true;
-    let remaining = cooldownSeconds;
-    addMessage(`Limit 3 obrazów osiągnięty. Odczekaj ${formatTime(remaining)}, zanim wygenerujesz kolejny obraz.`, 'bot');
+    function botReply(text) {
+      const lowerText = text.toLowerCase().trim();
+      const isTycoon = lowerText.includes("tycoon");
+      const isObby = lowerText.includes("obby");
+      const isSimulator = lowerText.includes("simulator");
 
-    cooldownTimeout = setInterval(() => {
-      remaining--;
-      if (remaining <= 0) {
-        cooldownActive = false;
-        clearInterval(cooldownTimeout);
-        addMessage('Możesz teraz ponownie generować obrazy.', 'bot');
-      } 
-      // Możesz tu dodać opcjonalną aktualizację komunikatu z countdownem
-    }, 1000);
-  }
-
-  function botReply(text) {
-    const lowerText = text.toLowerCase().trim();
-
-    if (waitingForGameType) {
-      waitingForGameType = false;
-
-      if (lowerText.includes("tycoon")) {
-        addMessage(`Oto prosty skrypt leaderstats do Tycoona:\n\`\`\`lua
--- Leaderstats do Tycoon
+      if (isTycoon) {
+        addMessage(`Generuję kod do Tycoona...
+<pre><code>-- Leaderstats do Tycoon
 local leaderstats = Instance.new('Folder')
 leaderstats.Name = 'leaderstats'
 leaderstats.Parent = game.Players.LocalPlayer
@@ -158,12 +137,15 @@ local cash = Instance.new('IntValue')
 cash.Name = 'Cash'
 cash.Value = 0
 cash.Parent = leaderstats
-\`\`\`
-Potrzeba coś jeszcze?`, 'bot');
+</code></pre>
+<button class="copy-btn">Skopiuj kod</button>
+Potrzeba coś jeszcze?`, 'bot', true);
         return;
-      } else if (lowerText.includes("obby")) {
-        addMessage(`Oto prosty skrypt leaderstats + checkpointy do Obby:\n\`\`\`lua
--- Leaderstats do Obby
+      }
+
+      if (isObby) {
+        addMessage(`Generuję kod do Obby...
+<pre><code>-- Leaderstats do Obby
 local leaderstats = Instance.new('Folder')
 leaderstats.Name = 'leaderstats'
 leaderstats.Parent = game.Players.LocalPlayer
@@ -173,7 +155,7 @@ points.Name = 'Points'
 points.Value = 0
 points.Parent = leaderstats
 
--- Przykład funkcji checkpoint
+-- Przykład checkpointu
 local checkpoints = workspace.Checkpoints
 
 function onTouched(part)
@@ -182,12 +164,15 @@ function onTouched(part)
     -- teleportuj do następnego checkpointu
   end
 end
-\`\`\`
-Potrzeba coś jeszcze?`, 'bot');
+</code></pre>
+<button class="copy-btn">Skopiuj kod</button>
+Potrzeba coś jeszcze?`, 'bot', true);
         return;
-      } else if (lowerText.includes("simulator")) {
-        addMessage(`Oto prosty skrypt statystyk do Simulatora:\n\`\`\`lua
--- Statystyki do Simulatora
+      }
+
+      if (isSimulator) {
+        addMessage(`Generuję kod do Simulatora...
+<pre><code>-- Statystyki do Simulatora
 local leaderstats = Instance.new('Folder')
 leaderstats.Name = 'leaderstats'
 leaderstats.Parent = game.Players.LocalPlayer
@@ -197,104 +182,27 @@ level.Name = 'Level'
 level.Value = 1
 level.Parent = leaderstats
 
-local experience = Instance.new('IntValue')
-experience.Name = 'Experience'
-experience.Value = 0
-experience.Parent = leaderstats
-\`\`\`
-Potrzeba coś jeszcze?`, 'bot');
-        return;
-      } else {
-        waitingForGameType = true; // czekamy jeszcze raz na poprawny wybór
-        addMessage("Nie rozumiem tej gry. Proszę wybierz: Tycoon, Obby lub Simulator.", 'bot');
+-- Przykład zbierania przedmiotów
+local function collectItem(player)
+  player.leaderstats.Level.Value += 1
+end
+</code></pre>
+<button class="copy-btn">Skopiuj kod</button>
+Potrzeba coś jeszcze?`, 'bot', true);
         return;
       }
+
+      // Domyślna odpowiedź
+      addMessage("Nie rozumiem. Napisz np. 'chcę obby', 'tycoon' albo 'simulator'.", 'bot');
     }
 
-    if (lowerText.includes('wygeneruj') && lowerText.includes('kod do roblox studio')) {
-      waitingForGameType = true;
-      addMessage("Jaka gra? Tycoon, Obby czy Simulator?", 'bot');
-      return;
-    }
-
-    if (lowerText.includes('wygeneruj obraz')) {
-      if (cooldownActive) {
-        addMessage('Musisz poczekać, zanim wygenerujesz kolejny obraz.', 'bot');
-        return;
-      }
-      if (imagesGenerated >= 3) {
-        startCooldown();
-        return;
-      }
-      imagesGenerated++;
-      addMessage('Generuję obraz, proszę czekać...', 'bot');
-      setTimeout(() => {
-        const images = [
-          'https://greenblox-creator.github.io/GreenGPT/MJS_23.4.2010-19.49.jpg',
-          'https://greenblox-creator.github.io/GreenGPT/MJS_23.4.2010-19.49.jpg',
-          'https://greenblox-creator.github.io/GreenGPT/MJS_23.4.2010-19.49.jpg'
-        ];
-        const imageUrl = images[(imagesGenerated - 1) % images.length];
-        addMessage(`<img src="${imageUrl}" alt="Wygenerowany obraz" />`, 'bot', true);
-      }, 2000);
-      return;
-    }
-
-    const greetings = ['cześć', 'siema', 'witaj', 'hej', 'hello', 'yo'];
-    if (greetings.some(greet => lowerText.includes(greet))) {
-      addMessage('Cześć! Jak mogę Ci pomóc?', 'bot');
-      return;
-    }
-
-    if (lowerText.includes('który') && (lowerText.includes('dzień') || lowerText.includes('data'))) {
-      const today = new Date();
-      addMessage(`Dzisiaj jest ${formatDate(today)}.`, 'bot');
-      return;
-    }
-
-    if (lowerText.includes('jak się masz') || lowerText.includes('jak tam')) {
-      addMessage('Dziękuję, mam się dobrze!', 'bot');
-      return;
-    }
-
-    if (lowerText.includes('co potrafisz')) {
-      addMessage('Na razie odpowiadam na proste pytania i uczę się nowych rzeczy.', 'bot');
-      return;
-    }
-
-    if (lowerText.includes('kim jesteś') || lowerText.includes('kto ty')) {
-      addMessage('Jestem GreenGPT, prostym chatbotem stworzonym przez Ciebie.', 'bot');
-      return;
-    }
-
-    const goodbyes = ['do widzenia', 'pa', 'cześć na razie', 'na razie', 'żegnaj'];
-    if (goodbyes.some(bye => lowerText.includes(bye))) {
-      addMessage('Do zobaczenia! Miłego dnia!', 'bot');
-      return;
-    }
-
-    if (['okej', 'ok', 'spoko', 'fajnie', 'dzięki', 'dzieki', 'thx', 'thanks'].some(word => lowerText === word)) {
-      addMessage('Super, cieszę się!', 'bot');
-      return;
-    }
-
-    addMessage('Nie rozumiem.', 'bot');
-  }
-
-  function sendMessage() {
-    const userText = input.value.trim();
-    if (!userText) return;
-    addMessage(userText, 'user');
-    botReply(userText);
-    input.value = '';
-    input.focus();
-  }
-
-  sendBtn.addEventListener('click', sendMessage);
-  input.addEventListener('keypress', e => {
-    if (e.key === 'Enter') sendMessage();
-  });
-</script>
-
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const text = input.value;
+      addMessage(text, 'user');
+      botReply(text);
+      input.value = '';
+    });
+  </script>
 </body>
 </html>
