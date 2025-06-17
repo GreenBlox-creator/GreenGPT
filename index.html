@@ -121,81 +121,104 @@
     }
 
     function botReply(text) {
-      const lowerText = text.toLowerCase().trim();
-      const isTycoon = lowerText.includes("tycoon");
-      const isObby = lowerText.includes("obby");
-      const isSimulator = lowerText.includes("simulator");
+  const msg = text.toLowerCase().trim();
 
-      if (isTycoon) {
-        addMessage(`Generuję kod do Tycoona...
-<pre><code>-- Leaderstats do Tycoon
-local leaderstats = Instance.new('Folder')
-leaderstats.Name = 'leaderstats'
-leaderstats.Parent = game.Players.LocalPlayer
+  // Przywitania
+  if (["siema", "hej", "elo", "yo", "witam", "czesc", "cześć"].includes(msg)) {
+    addMessage("Siema! Jak mogę pomóc?", "bot");
+    return;
+  }
 
-local cash = Instance.new('IntValue')
-cash.Name = 'Cash'
-cash.Value = 0
-cash.Parent = leaderstats
-</code></pre>
-<button class="copy-btn">Skopiuj kod</button>
-Potrzeba coś jeszcze?`, 'bot', true);
-        return;
-      }
+  // Pożegnania
+  if (["nara", "pa", "do zobaczenia", "bye", "do jutra", "do widzenia"].includes(msg)) {
+    addMessage("Na razie! Powodzenia z kodem!", "bot");
+    return;
+  }
 
-      if (isObby) {
-        addMessage(`Generuję kod do Obby...
-<pre><code>-- Leaderstats do Obby
-local leaderstats = Instance.new('Folder')
-leaderstats.Name = 'leaderstats'
-leaderstats.Parent = game.Players.LocalPlayer
+  // Podziękowania i reakcje
+  if (msg.includes("dzięki") || msg.includes("dzieki")) {
+    addMessage("Nie ma sprawy!", "bot");
+    return;
+  }
 
-local points = Instance.new('IntValue')
-points.Name = 'Points'
-points.Value = 0
-points.Parent = leaderstats
+  if (["ok", "okej", "spoko", "fajnie", "super", "haha", "lol"].includes(msg)) {
+    addMessage("😄", "bot");
+    return;
+  }
 
--- Przykład checkpointu
-local checkpoints = workspace.Checkpoints
+  // Rozpoznawanie zapytań o systemy
+  if (msg.includes("obby")) {
+    addMessage("Generuję kod do Obby...", "bot");
+    return;
+  }
 
-function onTouched(part)
-  local player = game.Players:GetPlayerFromCharacter(part.Parent)
-  if player then
-    -- teleportuj do następnego checkpointu
-  end
-end
-</code></pre>
-<button class="copy-btn">Skopiuj kod</button>
-Potrzeba coś jeszcze?`, 'bot', true);
-        return;
-      }
+  if (msg.includes("tycoon")) {
+    addMessage("Generuję kod do Tycoona...", "bot");
+    return;
+  }
 
-      if (isSimulator) {
-        addMessage(`Generuję kod do Simulatora...
-<pre><code>-- Statystyki do Simulatora
-local leaderstats = Instance.new('Folder')
-leaderstats.Name = 'leaderstats'
-leaderstats.Parent = game.Players.LocalPlayer
+  if (msg.includes("simulator")) {
+    addMessage("Generuję kod do Simulatora...", "bot");
+    return;
+  }
 
-local level = Instance.new('IntValue')
-level.Name = 'Level'
-level.Value = 1
-level.Parent = leaderstats
+  if (msg.includes("checkpoint")) {
+    addMessage("Checkpoint? Już daję przykład kodu...", "bot");
+    return;
+  }
 
--- Przykład zbierania przedmiotów
-local function collectItem(player)
-  player.leaderstats.Level.Value += 1
-end
-</code></pre>
-<button class="copy-btn">Skopiuj kod</button>
-Potrzeba coś jeszcze?`, 'bot', true);
-        return;
-      }
+  if (msg.includes("gui")) {
+    addMessage("GUI? Mam kilka przykładów — ekran startowy, sklep, przyciski?", "bot");
+    return;
+  }
 
-      // Domyślna odpowiedź
-      addMessage("Nie rozumiem. Napisz np. 'chcę obby', 'tycoon' albo 'simulator'.", 'bot');
-    }
+  if (msg.includes("leaderstats")) {
+    addMessage("Tworzę leaderstats... Dodajesz punkty, level czy kasę?", "bot");
+    return;
+  }
 
+  if (msg.includes("shop") || msg.includes("sklep")) {
+    addMessage("Już robię prosty system sklepu z guzikami!", "bot");
+    return;
+  }
+
+  if (msg.includes("kamera")) {
+    addMessage("Mam przykład kodu na kamerę z innej perspektywy!", "bot");
+    return;
+  }
+
+  if (msg.includes("spawn")) {
+    addMessage("Mam kod do spawnpointów i teleportów!", "bot");
+    return;
+  }
+
+  if (msg.includes("team") || msg.includes("drużyna")) {
+    addMessage("Chcesz system drużyn? Robię!", "bot");
+    return;
+  }
+
+  if (msg.includes("sound") || msg.includes("muzyka") || msg.includes("dźwięk")) {
+    addMessage("Już podaję jak dodać dźwięk do gry!", "bot");
+    return;
+  }
+
+  if (msg.includes("błąd") || msg.includes("error") || msg.includes("nie działa")) {
+    addMessage("Opisz, co dokładnie nie działa — pomogę znaleźć błąd!", "bot");
+    return;
+  }
+
+  // Domyślna odpowiedź — losowa, przyjazna
+  const randomReplies = [
+    "Ciekawe, powiedz więcej!",
+    "Możesz napisać dokładniej, co chcesz zrobić?",
+    "Brzmi fajnie! Co konkretnie mam wygenerować?",
+    "Spróbuj użyć słów jak 'obby', 'checkpoint', 'gui' albo 'leaderstats'.",
+    "Zaraz coś wymyślę — opisz dokładniej!"
+  ];
+
+  const reply = randomReplies[Math.floor(Math.random() * randomReplies.length)];
+  addMessage(reply, "bot");
+}
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       const text = input.value;
