@@ -36,11 +36,13 @@
     // image gen state
     let imagesGenerated = 0;
     let cooldownActive = false;
-    const cooldownSeconds = 300; // 5 minut
+    const cooldownSeconds = 300;
     let cooldownTimer;
-    
-    // code-gen state
-    // (niepotrzebna dodatkowa flaga, bo reagujemy na słowa kluczowe)
+
+    // shop state
+    let sklepZapytany = false;
+    let sklepZdefiniowany = false;
+    let sklepItems = "";
 
     function addMessage(text, cls, isHtml = false) {
       const msg = document.createElement('div');
@@ -49,7 +51,6 @@
       else msg.textContent = text;
       chat.appendChild(msg);
       chat.scrollTop = chat.scrollHeight;
-      // inicjuj copy buttons
       msg.querySelectorAll('button.copy-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           const code = btn.previousElementSibling.textContent;
@@ -77,53 +78,69 @@
     }
 
     function botReply(text) {
-  const msg = text.toLowerCase().trim();
+      const msg = text.toLowerCase().trim();
 
-  // —————— LUŹNE ROZMOWY ——————
-  if (["siema","hej","elo","yo","witam","cześć","czesc"].includes(msg)) {
-    addMessage("Siema! Jak mogę pomóc?", 'bot');
-    return;
-  }
-  if (["pa","nara","do zobaczenia","bye","do jutra","do widzenia"].includes(msg)) {
-    addMessage("Na razie! Powodzenia!", 'bot');
-    return;
-  }
-  if (msg.includes("dzięki")||msg.includes("dzieki")) {
-    addMessage("Nie ma sprawy!", 'bot');
-    return;
-  }
-  if (["ok","okej","spoko","fajnie","super","haha","lol"].includes(msg)) {
-    addMessage("😄", 'bot');
-    return;
-  }
+      // Luźne rozmowy
+      if (["siema","hej","elo","yo","witam","cześć","czesc"].includes(msg)) {
+        addMessage("Siema! Jak mogę pomóc?", 'bot'); return;
+      }
+      if (["pa","nara","do zobaczenia","bye","do jutra","do widzenia"].includes(msg)) {
+        addMessage("Na razie! Powodzenia!", 'bot'); return;
+      }
+      if (msg.includes("dzięki")||msg.includes("dzieki")) {
+        addMessage("Nie ma sprawy!", 'bot'); return;
+      }
+      if (["ok","okej","spoko","fajnie","super","haha","lol"].includes(msg)) {
+        addMessage("😄", 'bot'); return;
+      }
 
-  // —————— GENEROWANIE OBRAZÓW ——————
-  if (msg.includes('wygeneruj obraz')) {
-    if (cooldownActive) {
-      addMessage('Musisz poczekać, zanim wygenerujesz kolejny obraz.', 'bot');
-      return;
-    }
-    if (imagesGenerated >= 3) {
-      startCooldown();
-      return;
-    }
-    imagesGenerated++;
-    addMessage('Generuję obraz, proszę czekać...', 'bot');
-    setTimeout(() => {
-      const imgs = [
-        'https://greenblox-creator.github.io/GreenGPT/MJS_23.4.2010-19.49.jpg',
-        'https://greenblox-creator.github.io/GreenGPT/MJS_23.4.2010-19.49.jpg',
-        'https://greenblox-creator.github.io/GreenGPT/MJS_23.4.2010-19.49.jpg'
-      ];
-      const url = imgs[(imagesGenerated-1)%imgs.length];
-      addMessage(`<img src="${url}" alt="Wygenerowany obraz">`, 'bot', true);
-    }, 2000);
-    return;
-  }
+      // Generowanie obrazów
+      if (msg.includes('wygeneruj obraz')) {
+        if (cooldownActive) { addMessage('Musisz poczekać, zanim wygenerujesz kolejny obraz.', 'bot'); return; }
+        if (imagesGenerated >= 3) { startCooldown(); return; }
+        imagesGenerated++;
+        addMessage('Generuję obraz, proszę czekać...', 'bot');
+        setTimeout(() => {
+          const imgs = ['https://greenblox-creator.github.io/GreenGPT/MJS_23.4.2010-19.49.jpg',
+                        'https://greenblox-creator.github.io/GreenGPT/MJS_23.4.2010-19.49.jpg',
+                        'https://greenblox-creator.github.io/GreenGPT/MJS_23.4.2010-19.49.jpg'];
+          const url = imgs[(imagesGenerated-1)%imgs.length];
+          addMessage(`<img src="${url}" alt="Wygenerowany obraz">`, 'bot', true);
+        }, 2000);
+        return;
+      }
 
-  // —————— GENEROWANIE KODÓW LUA ——————
-  if (msg.includes("tycoon")) {
-    addMessage(`Generuję kod do Tycoona...
+      // Shop block (early exit)
+      if ((msg.includes("shop") || msg.includes("sklep")) && !sklepZapytany) {
+        addMessage("System sklepu? Daj znać, jakie przedmioty i ceny.", 'bot');
+        sklepZapytany = true;
+        return;
+      }
+      if ((msg.includes("item")||msg.includes("kosztuje")||msg.includes("przedmiot")) && sklepZapytany && !sklepZdefiniowany) {
+        sklepZdefiniowany = true;
+        sklepItems = text;
+        addMessage("Zapisano przedmioty do sklepu. Napisz 'generuj sklep' żeby dostać kod GUI.", 'bot');
+        return;
+      }
+      if (msg.includes("generuj sklep")) {
+        if (!sklepZdefiniowany) {
+          addMessage("Najpierw podaj przedmioty i ceny do sklepu.", 'bot');
+        } else {
+          addMessage(`Generuję GUI sklepu na podstawie: ${sklepItems}
+<pre><code>-- Kod GUI sklepu w Roblox
+local shopItems = {
+  {name = "Miecz", price = 100},
+  {name = "Pistolet", price = 250}
+}
+-- Dodaj do GUI według własnych potrzeb
+</code></pre><button class="copy-btn">Skopiuj kod</button>`, 'bot', true);
+        }
+        return;
+      }
+
+      // Generowanie kodów Lua
+      if (msg.includes("tycoon")) {
+        addMessage(`Generuję kod do Tycoona...
 <pre><code>-- Leaderstats do Tycoon
 local leaderstats = Instance.new('Folder')
 leaderstats.Name = 'leaderstats'
@@ -134,10 +151,10 @@ cash.Name = 'Cash'
 cash.Value = 0
 cash.Parent = leaderstats
 </code></pre><button class="copy-btn">Skopiuj kod</button>`, 'bot', true);
-    return;
-  }
-  if (msg.includes("obby")) {
-    addMessage(`Generuję kod do Obby...
+        return;
+      }
+      if (msg.includes("obby")) {
+        addMessage(`Generuję kod do Obby...
 <pre><code>-- Leaderstats do Obby
 local leaderstats = Instance.new('Folder')
 leaderstats.Name = 'leaderstats'
@@ -157,10 +174,10 @@ function onTouched(part)
   end
 end
 </code></pre><button class="copy-btn">Skopiuj kod</button>`, 'bot', true);
-    return;
-  }
-  if (msg.includes("simulator")) {
-    addMessage(`Generuję kod do Simulatora...
+        return;
+      }
+      if (msg.includes("simulator")) {
+        addMessage(`Generuję kod do Simulatora...
 <pre><code>-- Statystyki do Simulatora
 local leaderstats = Instance.new('Folder')
 leaderstats.Name = 'leaderstats'
@@ -176,61 +193,37 @@ experience.Name = 'Experience'
 experience.Value = 0
 experience.Parent = leaderstats
 </code></pre><button class="copy-btn">Skopiuj kod</button>`, 'bot', true);
-    return;
-  }
-  if (msg.includes("shop")) {
-    addMessage(`Generuję GUI sklepu...
-<pre><code>-- Przykładowy GUI Shop w Roblox
-local player = game.Players.LocalPlayer
-local screenGui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
-local frame = Instance.new("Frame", screenGui)
-frame.Size = UDim2.new(0, 300, 0, 200)
-frame.Position = UDim2.new(0.5, -150, 0.5, -100)
-frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        return;
+      }
 
-local button = Instance.new("TextButton", frame)
-button.Size = UDim2.new(0, 120, 0, 50)
-button.Position = UDim2.new(0, 10, 0, 10)
-button.Text = "Kup miecz"
-button.MouseButton1Click:Connect(function()
-  print("Kupiono miecz!")
-end)
-</code></pre><button class="copy-btn">Skopiuj kod</button>`, 'bot', true);
-    return;
-  }
+      // Inne słowa kluczowe
+      if (msg.includes("checkpoint")) {
+        addMessage("Checkpointy? Mogę podać przykład kodu, powiedz tylko dla jakiego typu gry.", 'bot'); return;
+      }
+      if (msg.includes("gui")) {
+        addMessage("GUI? Mam przykłady ekranów startowych, przycisków, sklepu itp.", 'bot'); return;
+      }
+      if (msg.includes("leaderstats")) {
+        addMessage("Leaderstats? Cash, Points, Level? Który typ?", 'bot'); return;
+      }
+      if (msg.includes("sound")||msg.includes("muzyka")||msg.includes("dźwięk")) {
+        addMessage("Dźwięki? Podam przykład dodawania SoundService.", 'bot'); return;
+      }
+      if (msg.includes("error")||msg.includes("błąd")||msg.includes("nie działa")) {
+        addMessage("Opisz, co nie działa, a pomogę znaleźć błąd.", 'bot'); return;
+      }
 
-  // —————— INNE SŁOWA KLUCZOWE ——————
-  if (msg.includes("checkpoint")) {
-    addMessage("Checkpointy? Mogę podać przykład kodu, powiedz tylko dla jakiego typu gry.", 'bot');
-    return;
-  }
-  if (msg.includes("gui")) {
-    addMessage("GUI? Mam przykłady ekranów startowych, przycisków, sklepu itp.", 'bot');
-    return;
-  }
-  if (msg.includes("leaderstats")) {
-    addMessage("Leaderstats? Cash, Points, Level? Który typ?", 'bot');
-    return;
-  }
-  if (msg.includes("sound")||msg.includes("muzyka")||msg.includes("dźwięk")) {
-    addMessage("Dźwięki? Podam przykład dodawania SoundService.", 'bot');
-    return;
-  }
-  if (msg.includes("error")||msg.includes("błąd")||msg.includes("nie działa")) {
-    addMessage("Opisz, co nie działa, a pomogę znaleźć błąd.", 'bot');
-    return;
-  }
+      // Domyślna odpowiedź
+      const fallback = [
+        "Ciekawe, powiedz więcej!",
+        "Możesz napisać dokładniej, co mam wygenerować?",
+        "Brzmi fajnie! Napisz 'obby', 'tycoon', 'simulator' lub 'wygeneruj obraz'.",
+        "Spróbuj słów jak 'checkpoint', 'gui', 'shop', 'sound'.",
+        "Zaraz coś wymyślę — daj znać, co potrzebujesz."
+      ];
+      addMessage(fallback[Math.floor(Math.random()*fallback.length)], 'bot');
+    }
 
-  // —————— DOMYŚLNA ODPOWIEDŹ ——————
-  const fallback = [
-    "Ciekawe, powiedz więcej!",
-    "Możesz napisać dokładniej, co mam wygenerować?",
-    "Brzmi fajnie! Napisz 'obby', 'tycoon', 'simulator' lub 'wygeneruj obraz'.",
-    "Spróbuj słów jak 'checkpoint', 'gui', 'shop', 'sound'.",
-    "Zaraz coś wymyślę — daj znać, co potrzebujesz."
-  ];
-  addMessage(fallback[Math.floor(Math.random()*fallback.length)], 'bot');
-}
     form.addEventListener('submit', e => {
       e.preventDefault();
       const txt = input.value.trim();
