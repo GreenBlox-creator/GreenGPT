@@ -2,91 +2,28 @@
 <html lang="pl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chatbot Roblox</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GreenGPT – Chatbot</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #121212;
-      color: white;
-      margin: 0;
-      padding: 0;
-    }
-    .chat-container {
-      max-width: 600px;
-      margin: 0 auto;
-      padding: 20px;
-      height: 90vh;
-      display: flex;
-      flex-direction: column;
-    }
-    #chat {
-      flex-grow: 1;
-      overflow-y: auto;
-      margin-bottom: 10px;
-      padding-right: 5px;
-    }
-    .message {
-      margin: 10px 0;
-      padding: 10px;
-      border-radius: 10px;
-      max-width: 100%;
-    }
-    .user {
-      background-color: #2e2e2e;
-      text-align: right;
-    }
-    .bot {
-      background-color: #1e1e1e;
-      text-align: left;
-    }
-    form {
-      display: flex;
-      gap: 10px;
-    }
-    input[type="text"] {
-      flex-grow: 1;
-      padding: 10px;
-      font-size: 16px;
-      border: none;
-      border-radius: 5px;
-    }
-    button {
-      padding: 10px 20px;
-      font-size: 16px;
-      background-color: #66bb6a;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    pre {
-      background-color: #1b1b1b;
-      padding: 10px;
-      border-radius: 6px;
-      overflow-x: auto;
-      margin-top: 5px;
-    }
-    .copy-btn {
-      margin-top: 5px;
-      background-color: #66bb6a;
-      color: white;
-      border: none;
-      padding: 6px 10px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 14px;
-    }
-    .copy-btn:hover {
-      background-color: #4caf50;
-    }
+    body { font-family: Arial; background: #121212; color: #eee; margin:0; }
+    .chat-container { max-width:600px; margin:0 auto; padding:20px; height:90vh; display:flex; flex-direction:column; }
+    #chat { flex:1; overflow-y:auto; padding-right:5px; }
+    .message { margin:8px 0; padding:10px; border-radius:8px; max-width:80%; word-wrap:break-word; }
+    .user { background:#2e2e2e; align-self:flex-end; }
+    .bot  { background:#1e1e1e; align-self:flex-start; }
+    form { display:flex; gap:10px; }
+    input { flex:1; padding:10px; font-size:16px; border:none; border-radius:5px; }
+    button { padding:10px 20px; font-size:16px; background:#66bb6a; color:white; border:none; border-radius:5px; cursor:pointer; }
+    pre { background:#1b1b1b; padding:8px; border-radius:6px; overflow-x:auto; margin-top:5px; }
+    .copy-btn { margin-top:5px; background:#66bb6a; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer; font-size:14px; }
+    .copy-btn:hover { background:#4caf50; }
   </style>
 </head>
 <body>
   <div class="chat-container">
     <div id="chat"></div>
     <form id="form">
-      <input type="text" id="input" autocomplete="off" placeholder="Napisz wiadomość..." required />
+      <input id="input" autocomplete="off" placeholder="Napisz wiadomość..." required />
       <button type="submit">Wyślij</button>
     </form>
   </div>
@@ -96,134 +33,195 @@
     const form = document.getElementById('form');
     const input = document.getElementById('input');
 
-    function addMessage(text, className, isHtml = false) {
+    // image gen state
+    let imagesGenerated = 0;
+    let cooldownActive = false;
+    const cooldownSeconds = 300; // 5 minut
+    let cooldownTimer;
+    
+    // code-gen state
+    // (niepotrzebna dodatkowa flaga, bo reagujemy na słowa kluczowe)
+
+    function addMessage(text, cls, isHtml = false) {
       const msg = document.createElement('div');
-      msg.className = 'message ' + className;
-
-      if (isHtml) {
-        msg.innerHTML = text;
-      } else {
-        msg.textContent = text;
-      }
-
+      msg.className = `message ${cls}`;
+      if (isHtml) msg.innerHTML = text;
+      else msg.textContent = text;
       chat.appendChild(msg);
       chat.scrollTop = chat.scrollHeight;
-
-      msg.querySelectorAll('button.copy-btn').forEach(button => {
-        button.addEventListener('click', () => {
-          const code = button.previousElementSibling.textContent;
+      // inicjuj copy buttons
+      msg.querySelectorAll('button.copy-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const code = btn.previousElementSibling.textContent;
           navigator.clipboard.writeText(code).then(() => {
-            button.textContent = 'Skopiowano!';
-            setTimeout(() => button.textContent = 'Skopiuj kod', 2000);
+            btn.textContent = 'Skopiowano!';
+            setTimeout(() => btn.textContent = 'Skopiuj kod', 2000);
           });
         });
       });
     }
 
+    function startCooldown() {
+      cooldownActive = true;
+      let rem = cooldownSeconds;
+      addMessage(`Limit 3 obrazów osiągnięty. Czekaj ${Math.floor(rem/60)}m ${rem%60}s.`, 'bot');
+      cooldownTimer = setInterval(() => {
+        rem--;
+        if (rem <= 0) {
+          clearInterval(cooldownTimer);
+          imagesGenerated = 0;
+          cooldownActive = false;
+          addMessage('Możesz ponownie generować obrazy.', 'bot');
+        }
+      }, 1000);
+    }
+
     function botReply(text) {
-  const msg = text.toLowerCase().trim();
+      const msg = text.toLowerCase().trim();
 
-  // Przywitania
-  if (["siema", "hej", "elo", "yo", "witam", "czesc", "cześć"].includes(msg)) {
-    addMessage("Siema! Jak mogę pomóc?", "bot");
-    return;
-  }
+      // —————— LUŹNE ROZMOWY ——————
+      if (["siema","hej","elo","yo","witam","cześć","czesc"].includes(msg)) {
+        addMessage("Siema! Jak mogę pomóc?", 'bot');
+        return;
+      }
+      if (["pa","nara","do zobaczenia","bye","do jutra","do widzenia"].includes(msg)) {
+        addMessage("Na razie! Powodzenia!", 'bot');
+        return;
+      }
+      if (msg.includes("dzięki")||msg.includes("dzieki")) {
+        addMessage("Nie ma sprawy!", 'bot');
+        return;
+      }
+      if (["ok","okej","spoko","fajnie","super","haha","lol"].includes(msg)) {
+        addMessage("😄", 'bot');
+        return;
+      }
 
-  // Pożegnania
-  if (["nara", "pa", "do zobaczenia", "bye", "do jutra", "do widzenia"].includes(msg)) {
-    addMessage("Na razie! Powodzenia z kodem!", "bot");
-    return;
-  }
+      // —————— GENEROWANIE OBRAZÓW ——————
+      if (msg.includes('wygeneruj obraz')) {
+        if (cooldownActive) {
+          addMessage('Musisz poczekać, zanim wygenerujesz kolejny obraz.', 'bot');
+          return;
+        }
+        if (imagesGenerated >= 3) {
+          startCooldown();
+          return;
+        }
+        imagesGenerated++;
+        addMessage('Generuję obraz, proszę czekać...', 'bot');
+        setTimeout(() => {
+          const imgs = [
+            'https://greenblox-creator.github.io/GreenGPT/MJS_23.4.2010-19.49.jpg',
+            'https://greenblox-creator.github.io/GreenGPT/MJS_23.4.2010-19.49.jpg',
+            'https://greenblox-creator.github.io/GreenGPT/MJS_23.4.2010-19.49.jpg'
+          ];
+          const url = imgs[(imagesGenerated-1)%imgs.length];
+          addMessage(`<img src="${url}" alt="Wygenerowany obraz">`, 'bot', true);
+        }, 2000);
+        return;
+      }
 
-  // Podziękowania i reakcje
-  if (msg.includes("dzięki") || msg.includes("dzieki")) {
-    addMessage("Nie ma sprawy!", "bot");
-    return;
-  }
+      // —————— GENEROWANIE KODÓW LUA ——————
+      if (msg.includes("tycoon")) {
+        addMessage(`Generuję kod do Tycoona...
+<pre><code>-- Leaderstats do Tycoon
+local leaderstats = Instance.new('Folder')
+leaderstats.Name = 'leaderstats'
+leaderstats.Parent = game.Players.LocalPlayer
 
-  if (["ok", "okej", "spoko", "fajnie", "super", "haha", "lol"].includes(msg)) {
-    addMessage("😄", "bot");
-    return;
-  }
+local cash = Instance.new('IntValue')
+cash.Name = 'Cash'
+cash.Value = 0
+cash.Parent = leaderstats
+</code></pre><button class="copy-btn">Skopiuj kod</button>`, 'bot', true);
+        return;
+      }
+      if (msg.includes("obby")) {
+        addMessage(`Generuję kod do Obby...
+<pre><code>-- Leaderstats do Obby
+local leaderstats = Instance.new('Folder')
+leaderstats.Name = 'leaderstats'
+leaderstats.Parent = game.Players.LocalPlayer
 
-  // Rozpoznawanie zapytań o systemy
-  if (msg.includes("obby")) {
-    addMessage("Generuję kod do Obby...", "bot");
-    return;
-  }
+local points = Instance.new('IntValue')
+points.Name = 'Points'
+points.Value = 0
+points.Parent = leaderstats
 
-  if (msg.includes("tycoon")) {
-    addMessage("Generuję kod do Tycoona...", "bot");
-    return;
-  }
+-- Checkpoint example
+local checkpoints = workspace.Checkpoints
+function onTouched(part)
+  local player = game.Players:GetPlayerFromCharacter(part.Parent)
+  if player then
+    -- teleport to next checkpoint
+  end
+end
+</code></pre><button class="copy-btn">Skopiuj kod</button>`, 'bot', true);
+        return;
+      }
+      if (msg.includes("simulator")) {
+        addMessage(`Generuję kod do Simulatora...
+<pre><code>-- Statystyki do Simulatora
+local leaderstats = Instance.new('Folder')
+leaderstats.Name = 'leaderstats'
+leaderstats.Parent = game.Players.LocalPlayer
 
-  if (msg.includes("simulator")) {
-    addMessage("Generuję kod do Simulatora...", "bot");
-    return;
-  }
+local level = Instance.new('IntValue')
+level.Name = 'Level'
+level.Value = 1
+level.Parent = leaderstats
 
-  if (msg.includes("checkpoint")) {
-    addMessage("Checkpoint? Już daję przykład kodu...", "bot");
-    return;
-  }
+local experience = Instance.new('IntValue')
+experience.Name = 'Experience'
+experience.Value = 0
+experience.Parent = leaderstats
+</code></pre><button class="copy-btn">Skopiuj kod</button>`, 'bot', true);
+        return;
+      }
 
-  if (msg.includes("gui")) {
-    addMessage("GUI? Mam kilka przykładów — ekran startowy, sklep, przyciski?", "bot");
-    return;
-  }
+      // —————— INNE SŁOWA KLUCZOWE ——————
+      if (msg.includes("checkpoint")) {
+        addMessage("Checkpointy? Mogę podać przykład kodu, powiedz tylko dla jakiego typu gry.", 'bot');
+        return;
+      }
+      if (msg.includes("gui")) {
+        addMessage("GUI? Mam przykłady ekranów startowych, przycisków, sklepu itp.", 'bot');
+        return;
+      }
+      if (msg.includes("leaderstats")) {
+        addMessage("Leaderstats? Cash, Points, Level? Który typ?", 'bot');
+        return;
+      }
+      if (msg.includes("shop")||msg.includes("sklep")) {
+        addMessage("System sklepu? Daj znać, jakie przedmioty i ceny.", 'bot');
+        return;
+      }
+      if (msg.includes("sound")||msg.includes("muzyka")||msg.includes("dźwięk")) {
+        addMessage("Dźwięki? Podam przykład dodawania SoundService.", 'bot');
+        return;
+      }
+      if (msg.includes("error")||msg.includes("błąd")||msg.includes("nie działa")) {
+        addMessage("Opisz, co nie działa, a pomogę znaleźć błąd.", 'bot');
+        return;
+      }
 
-  if (msg.includes("leaderstats")) {
-    addMessage("Tworzę leaderstats... Dodajesz punkty, level czy kasę?", "bot");
-    return;
-  }
+      // —————— DOMYŚLNA ODPOWIEDŹ ——————
+      const fallback = [
+        "Ciekawe, powiedz więcej!",
+        "Możesz napisać dokładniej, co mam wygenerować?",
+        "Brzmi fajnie! Napisz 'obby', 'tycoon', 'simulator' lub 'wygeneruj obraz'.",
+        "Spróbuj słów jak 'checkpoint', 'gui', 'shop', 'sound'.",
+        "Zaraz coś wymyślę — daj znać, co potrzebujesz."
+      ];
+      addMessage(fallback[Math.floor(Math.random()*fallback.length)], 'bot');
+    }
 
-  if (msg.includes("shop") || msg.includes("sklep")) {
-    addMessage("Już robię prosty system sklepu z guzikami!", "bot");
-    return;
-  }
-
-  if (msg.includes("kamera")) {
-    addMessage("Mam przykład kodu na kamerę z innej perspektywy!", "bot");
-    return;
-  }
-
-  if (msg.includes("spawn")) {
-    addMessage("Mam kod do spawnpointów i teleportów!", "bot");
-    return;
-  }
-
-  if (msg.includes("team") || msg.includes("drużyna")) {
-    addMessage("Chcesz system drużyn? Robię!", "bot");
-    return;
-  }
-
-  if (msg.includes("sound") || msg.includes("muzyka") || msg.includes("dźwięk")) {
-    addMessage("Już podaję jak dodać dźwięk do gry!", "bot");
-    return;
-  }
-
-  if (msg.includes("błąd") || msg.includes("error") || msg.includes("nie działa")) {
-    addMessage("Opisz, co dokładnie nie działa — pomogę znaleźć błąd!", "bot");
-    return;
-  }
-
-  // Domyślna odpowiedź — losowa, przyjazna
-  const randomReplies = [
-    "Ciekawe, powiedz więcej!",
-    "Możesz napisać dokładniej, co chcesz zrobić?",
-    "Brzmi fajnie! Co konkretnie mam wygenerować?",
-    "Spróbuj użyć słów jak 'obby', 'checkpoint', 'gui' albo 'leaderstats'.",
-    "Zaraz coś wymyślę — opisz dokładniej!"
-  ];
-
-  const reply = randomReplies[Math.floor(Math.random() * randomReplies.length)];
-  addMessage(reply, "bot");
-}
-    form.addEventListener('submit', (e) => {
+    form.addEventListener('submit', e => {
       e.preventDefault();
-      const text = input.value;
-      addMessage(text, 'user');
-      botReply(text);
+      const txt = input.value.trim();
+      if (!txt) return;
+      addMessage(txt, 'user');
+      botReply(txt);
       input.value = '';
     });
   </script>
