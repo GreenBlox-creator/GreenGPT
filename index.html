@@ -96,7 +96,8 @@
   let imagesGenerated = 0;
   let cooldownActive = false;
   let cooldownTimeout;
-  let cooldownSeconds = 300; // 5 minut
+  const cooldownSeconds = 300; // 5 minut
+  let waitingForGameType = false;
 
   function formatDate(date) {
     const months = [
@@ -104,6 +105,12 @@
       'lipca', 'sierpnia', 'września', 'października', 'listopada', 'grudnia'
     ];
     return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
+  }
+
+  function formatTime(seconds) {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}m ${s}s`;
   }
 
   function addMessage(text, className, isHtml = false) {
@@ -129,26 +136,19 @@
         cooldownActive = false;
         clearInterval(cooldownTimeout);
         addMessage('Możesz teraz ponownie generować obrazy.', 'bot');
-      } else {
-        // Aktualizacja wiadomości o odliczaniu (opcjonalne - dla uproszczenia tu tego nie robimy)
-      }
+      } 
+      // Możesz tu dodać opcjonalną aktualizację komunikatu z countdownem
     }, 1000);
   }
 
-  function formatTime(seconds) {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m}m ${s}s`;
-  }
-
   function botReply(text) {
-  const lowerText = text.toLowerCase().trim();
+    const lowerText = text.toLowerCase().trim();
 
-  if (waitingForGameType) {
-    waitingForGameType = false;
+    if (waitingForGameType) {
+      waitingForGameType = false;
 
-    if (lowerText.includes("tycoon")) {
-      addMessage(`Oto prosty skrypt leaderstats do Tycoona:\n\`\`\`lua
+      if (lowerText.includes("tycoon")) {
+        addMessage(`Oto prosty skrypt leaderstats do Tycoona:\n\`\`\`lua
 -- Leaderstats do Tycoon
 local leaderstats = Instance.new('Folder')
 leaderstats.Name = 'leaderstats'
@@ -160,9 +160,9 @@ cash.Value = 0
 cash.Parent = leaderstats
 \`\`\`
 Potrzeba coś jeszcze?`, 'bot');
-      return;
-    } else if (lowerText.includes("obby")) {
-      addMessage(`Oto prosty skrypt leaderstats + checkpointy do Obby:\n\`\`\`lua
+        return;
+      } else if (lowerText.includes("obby")) {
+        addMessage(`Oto prosty skrypt leaderstats + checkpointy do Obby:\n\`\`\`lua
 -- Leaderstats do Obby
 local leaderstats = Instance.new('Folder')
 leaderstats.Name = 'leaderstats'
@@ -184,9 +184,9 @@ function onTouched(part)
 end
 \`\`\`
 Potrzeba coś jeszcze?`, 'bot');
-      return;
-    } else if (lowerText.includes("simulator")) {
-      addMessage(`Oto prosty skrypt statystyk do Simulatora:\n\`\`\`lua
+        return;
+      } else if (lowerText.includes("simulator")) {
+        addMessage(`Oto prosty skrypt statystyk do Simulatora:\n\`\`\`lua
 -- Statystyki do Simulatora
 local leaderstats = Instance.new('Folder')
 leaderstats.Name = 'leaderstats'
@@ -203,98 +203,20 @@ experience.Value = 0
 experience.Parent = leaderstats
 \`\`\`
 Potrzeba coś jeszcze?`, 'bot');
-      return;
-    } else {
-      waitingForGameType = true; // czekamy jeszcze raz na poprawny wybór
-      addMessage("Nie rozumiem tej gry. Proszę wybierz: Tycoon, Obby lub Simulator.", 'bot');
+        return;
+      } else {
+        waitingForGameType = true; // czekamy jeszcze raz na poprawny wybór
+        addMessage("Nie rozumiem tej gry. Proszę wybierz: Tycoon, Obby lub Simulator.", 'bot');
+        return;
+      }
+    }
+
+    if (lowerText.includes('wygeneruj') && lowerText.includes('kod do roblox studio')) {
+      waitingForGameType = true;
+      addMessage("Jaka gra? Tycoon, Obby czy Simulator?", 'bot');
       return;
     }
-  }
 
-  if (lowerText.includes('wygeneruj') && lowerText.includes('kod do roblox studio')) {
-    waitingForGameType = true;
-    addMessage("Jaka gra? Tycoon, Obby czy Simulator?", 'bot');
-    return;
-  }
-
-  // Tutaj masz już swoje stare warunki:
-  // Symulacja generowania obrazów z limitem i cooldownem
-  if (lowerText.includes('wygeneruj obraz')) {
-    if (cooldownActive) {
-      addMessage('Musisz poczekać, zanim wygenerujesz kolejny obraz.', 'bot');
-      return;
-    }
-    if (imagesGenerated >= 3) {
-      startCooldown();
-      return;
-    }
-    imagesGenerated++;
-    addMessage('Generuję obraz, proszę czekać...', 'bot');
-    setTimeout(() => {
-      const images = [
-        'https://greenblox-creator.github.io/GreenGPT/MJS_23.4.2010-19.49.jpg',
-        'https://greenblox-creator.github.io/GreenGPT/MJS_23.4.2010-19.49.jpg',
-        'https://greenblox-creator.github.io/GreenGPT/MJS_23.4.2010-19.49.jpg'
-      ];
-      // Pokaż obraz z tablicy na podstawie liczby wygenerowanych
-      const imageUrl = images[(imagesGenerated - 1) % images.length];
-      addMessage(`<img src="${imageUrl}" alt="Wygenerowany obraz" />`, 'bot', true);
-    }, 2000);
-    return;
-  }
-
-  // Powitania
-  const greetings = ['cześć', 'siema', 'witaj', 'hej', 'hello', 'yo'];
-  if (greetings.some(greet => lowerText.includes(greet))) {
-    addMessage('Cześć! Jak mogę Ci pomóc?', 'bot');
-    return;
-  }
-
-  // Pytanie o dzień/datę
-  if (lowerText.includes('który') && (lowerText.includes('dzień') || lowerText.includes('data'))) {
-    const today = new Date();
-    addMessage(`Dzisiaj jest ${formatDate(today)}.`, 'bot');
-    return;
-  }
-
-  // Pytanie o samopoczucie
-  if (lowerText.includes('jak się masz') || lowerText.includes('jak tam')) {
-    addMessage('Dziękuję, mam się dobrze!', 'bot');
-    return;
-  }
-
-  // Pytanie co potrafi
-  if (lowerText.includes('co potrafisz')) {
-    addMessage('Na razie odpowiadam na proste pytania i uczę się nowych rzeczy.', 'bot');
-    return;
-  }
-
-  // Kim jest bot
-  if (lowerText.includes('kim jesteś') || lowerText.includes('kto ty')) {
-    addMessage('Jestem GreenGPT, prostym chatbotem stworzonym przez Ciebie.', 'bot');
-    return;
-  }
-
-  // Pożegnania
-  const goodbyes = ['do widzenia', 'pa', 'cześć na razie', 'na razie', 'żegnaj'];
-  if (goodbyes.some(bye => lowerText.includes(bye))) {
-    addMessage('Do zobaczenia! Miłego dnia!', 'bot');
-    return;
-  }
-
-  // Reakcje na potwierdzenia i podziękowania
-  if (['okej', 'ok', 'spoko', 'fajnie', 'dzięki', 'dzieki', 'thx', 'thanks'].some(word => lowerText === word)) {
-    addMessage('Super, cieszę się!', 'bot');
-    return;
-  }
-
-  // Domyślna odpowiedź
-  addMessage('Nie rozumiem.', 'bot');
-  }
-  function botReply(text) {
-    const lowerText = text.toLowerCase().trim();
-
-    // Symulacja generowania obrazów z limitem i cooldownem
     if (lowerText.includes('wygeneruj obraz')) {
       if (cooldownActive) {
         addMessage('Musisz poczekać, zanim wygenerujesz kolejny obraz.', 'bot');
@@ -312,59 +234,50 @@ Potrzeba coś jeszcze?`, 'bot');
           'https://greenblox-creator.github.io/GreenGPT/MJS_23.4.2010-19.49.jpg',
           'https://greenblox-creator.github.io/GreenGPT/MJS_23.4.2010-19.49.jpg'
         ];
-        // Pokaż obraz z tablicy na podstawie liczby wygenerowanych
         const imageUrl = images[(imagesGenerated - 1) % images.length];
         addMessage(`<img src="${imageUrl}" alt="Wygenerowany obraz" />`, 'bot', true);
       }, 2000);
       return;
     }
 
-    // Powitania
     const greetings = ['cześć', 'siema', 'witaj', 'hej', 'hello', 'yo'];
     if (greetings.some(greet => lowerText.includes(greet))) {
       addMessage('Cześć! Jak mogę Ci pomóc?', 'bot');
       return;
     }
 
-    // Pytanie o dzień/datę
     if (lowerText.includes('który') && (lowerText.includes('dzień') || lowerText.includes('data'))) {
       const today = new Date();
       addMessage(`Dzisiaj jest ${formatDate(today)}.`, 'bot');
       return;
     }
 
-    // Pytanie o samopoczucie
     if (lowerText.includes('jak się masz') || lowerText.includes('jak tam')) {
       addMessage('Dziękuję, mam się dobrze!', 'bot');
       return;
     }
 
-    // Pytanie co potrafi
     if (lowerText.includes('co potrafisz')) {
       addMessage('Na razie odpowiadam na proste pytania i uczę się nowych rzeczy.', 'bot');
       return;
     }
 
-    // Kim jest bot
     if (lowerText.includes('kim jesteś') || lowerText.includes('kto ty')) {
       addMessage('Jestem GreenGPT, prostym chatbotem stworzonym przez Ciebie.', 'bot');
       return;
     }
 
-    // Pożegnania
     const goodbyes = ['do widzenia', 'pa', 'cześć na razie', 'na razie', 'żegnaj'];
     if (goodbyes.some(bye => lowerText.includes(bye))) {
       addMessage('Do zobaczenia! Miłego dnia!', 'bot');
       return;
     }
 
-    // Reakcje na potwierdzenia i podziękowania
     if (['okej', 'ok', 'spoko', 'fajnie', 'dzięki', 'dzieki', 'thx', 'thanks'].some(word => lowerText === word)) {
       addMessage('Super, cieszę się!', 'bot');
       return;
     }
 
-    // Domyślna odpowiedź
     addMessage('Nie rozumiem.', 'bot');
   }
 
@@ -384,4 +297,4 @@ Potrzeba coś jeszcze?`, 'bot');
 </script>
 
 </body>
-  </html>
+</html>
