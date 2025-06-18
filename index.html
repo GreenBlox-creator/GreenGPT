@@ -20,6 +20,19 @@
   </style>
 </head>
 <body>
+  <div style="position:relative;">
+  <div id="menu-toggle" onclick="toggleMenu()" style="padding:10px;cursor:pointer;position:absolute;top:0;left:0;">
+    &#9776; <!-- Trzy poziome kreski -->
+  </div>
+
+  <div id="side-menu" style="position:fixed;top:0;left:-250px;width:250px;height:100%;background:#1e1e1e;color:#eee;padding:20px;transition:left 0.3s;z-index:1000;">
+    <h3>📋 Menu</h3>
+    <ul style="list-style:none;padding:0;">
+      <li><a href="login.html" style="color:#66bb6a;text-decoration:none;">🔐 Zaloguj / Załóż konto</a></li>
+      <li><a href="error-report.html" style="color:#f44336;text-decoration:none;">🐞 Zgłoś błąd</a></li>
+    </ul>
+  </div>
+  </div>
   <div class="chat-container">
     <div id="chat"></div>
     <form id="form">
