@@ -1,0 +1,12 @@
+{
+  "conversation": [
+    {
+      "role": "user",
+      "message": "Cześć!"
+    },
+    {
+      "role": "bot",
+      "message": "Hej Luka! Jak mogę Ci pomóc?"
+    }
+  ]
+}
