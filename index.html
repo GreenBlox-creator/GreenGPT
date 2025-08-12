@@ -49,6 +49,7 @@
 <body>
   <div id="chat">
     <h2>Offline ChatBot</h2>
+    <p id="limitMsg" style="color: red; font-weight: bold;"></p>
     <div id="chatBox"></div>
     <div id="inputArea">
       <input type="text" id="userInput" placeholder="Napisz coś..." />
@@ -57,35 +58,66 @@
   </div>
 
   <script>
-    let responses = {};
+  let responses = {};
+  let messageTimes = []; // czas wysłania każdej wiadomości (timestamp)
+  const MAX_MESSAGES = 10;
+  const TIME_WINDOW = 10 * 60 * 1000; // 10 minut w milisekundach
 
-    // Wczytaj JSON lokalnie
-    fetch("data.json")
-      .then(res => res.json())
-      .then(data => {
-        responses = data;
-      });
+  fetch("data/data.json")
+    .then(res => res.json())
+    .then(data => {
+      responses = data;
+    });
 
-    const chatBox = document.getElementById("chatBox");
-    const userInput = document.getElementById("userInput");
-    const sendBtn = document.getElementById("sendBtn");
+  const chatBox = document.getElementById("chatBox");
+  const userInput = document.getElementById("userInput");
+  const sendBtn = document.getElementById("sendBtn");
 
-    function sendMessage() {
-      const message = userInput.value.trim().toLowerCase();
-      if (!message) return;
+  function updateLimitMessage() {
+    const now = Date.now();
+    messageTimes = messageTimes.filter(t => now - t < TIME_WINDOW);
+    const remaining = MAX_MESSAGES - messageTimes.length;
 
-      chatBox.innerHTML += `<div class="message"><span class="user">Ty:</span> ${message}</div>`;
-      userInput.value = "";
+    const limitMsg = document.getElementById("limitMsg");
+    if (remaining <= 0) {
+      const waitTime = Math.ceil((TIME_WINDOW - (now - messageTimes[0])) / 60000);
+      limitMsg.textContent = `Limit wiadomości osiągnięty. Poczekaj ${waitTime} minut.`;
+    } else {
+      limitMsg.textContent = `Możesz wysłać jeszcze ${remaining} wiadomości.`;
+    }
+  }
 
-      let reply = responses[message] || "Nie rozumiem... 😕";
-      chatBox.innerHTML += `<div class="message"><span class="bot">Bot:</span> ${reply}</div>`;
-      chatBox.scrollTop = chatBox.scrollHeight;
+  function sendMessage() {
+    const now = Date.now();
+    messageTimes = messageTimes.filter(t => now - t < TIME_WINDOW);
+
+    if (messageTimes.length >= MAX_MESSAGES) {
+      updateLimitMessage();
+      return;
     }
 
-    sendBtn.addEventListener("click", sendMessage);
-    userInput.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") sendMessage();
-    });
-  </script>
+    const message = userInput.value.trim().toLowerCase();
+    if (!message) return;
+
+    chatBox.innerHTML += `<div class="message"><span class="user">Ty:</span> ${message}</div>`;
+    userInput.value = "";
+
+    let reply = responses[message] || "Nie rozumiem... 😕";
+    chatBox.innerHTML += `<div class="message"><span class="bot">Bot:</span> ${reply}</div>`;
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    messageTimes.push(now);
+    updateLimitMessage();
+  }
+
+  sendBtn.addEventListener("click", sendMessage);
+  userInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") sendMessage();
+  });
+
+  // Aktualizuj licznik co minutę
+  setInterval(updateLimitMessage, 60000);
+</script>
+
 </body>
 </html>
