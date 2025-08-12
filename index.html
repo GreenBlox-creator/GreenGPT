@@ -1,20 +1,91 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-  <meta charset="UTF-8" />
-  <title>Prosty ChatBot</title>
+  <meta charset="UTF-8">
+  <title>Offline ChatBot</title>
   <style>
-    body { font-family: sans-serif; background: #f4f4f4; padding: 20px; }
-    #chat { max-width: 600px; margin: auto; background: #fff; padding: 20px; border-radius: 8px; }
-    .message { margin-bottom: 10px; }
-    .user { font-weight: bold; color: #0077cc; }
-    .bot { color: #333; }
+    body {
+      font-family: sans-serif;
+      background: #eef;
+      padding: 20px;
+    }
+    #chat {
+      max-width: 600px;
+      margin: auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .message {
+      margin-bottom: 10px;
+    }
+    .user {
+      color: blue;
+      font-weight: bold;
+    }
+    .bot {
+      color: green;
+    }
+    #inputArea {
+      display: flex;
+      margin-top: 20px;
+    }
+    #userInput {
+      flex: 1;
+      padding: 10px;
+      font-size: 16px;
+    }
+    #sendBtn {
+      padding: 10px 20px;
+      font-size: 16px;
+      background: #0077cc;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
   <div id="chat">
-    <div class="message"><span class="user">User:</span> Cześć!</div>
-    <div class="message"><span class="bot">GreenGPT:</span> Hej Luka! Jak mogę Ci pomóc?</div>
+    <h2>Offline ChatBot</h2>
+    <div id="chatBox"></div>
+    <div id="inputArea">
+      <input type="text" id="userInput" placeholder="Napisz coś..." />
+      <button id="sendBtn">Wyślij</button>
+    </div>
   </div>
+
+  <script>
+    let responses = {};
+
+    // Wczytaj JSON lokalnie
+    fetch("data.json")
+      .then(res => res.json())
+      .then(data => {
+        responses = data;
+      });
+
+    const chatBox = document.getElementById("chatBox");
+    const userInput = document.getElementById("userInput");
+    const sendBtn = document.getElementById("sendBtn");
+
+    function sendMessage() {
+      const message = userInput.value.trim().toLowerCase();
+      if (!message) return;
+
+      chatBox.innerHTML += `<div class="message"><span class="user">Ty:</span> ${message}</div>`;
+      userInput.value = "";
+
+      let reply = responses[message] || "Nie rozumiem... 😕";
+      chatBox.innerHTML += `<div class="message"><span class="bot">Bot:</span> ${reply}</div>`;
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    sendBtn.addEventListener("click", sendMessage);
+    userInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") sendMessage();
+    });
+  </script>
 </body>
 </html>
