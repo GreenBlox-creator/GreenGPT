@@ -1,1 +1,151 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <title>Resetuj hasło - ChatBot Luka</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f4f8;
+    }
+    header {
+      background: #0077cc;
+      color: white;
+      padding: 15px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    header {
+  height: 60px; /* lub np. 50px */
+  padding: 0 30px;
+  display: flex;
+  align-items: center;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 20px;
+    }
+    header a {
+      background: white;
+      color: #0077cc;
+      padding: 8px 16px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+    header a:hover {
+      background: #e0e0e0;
+    }
+    .container {
+      max-width: 400px;
+      margin: 40px auto;
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    input {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 16px;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      background: #0077cc;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background: #005fa3;
+    }
+    #message {
+      text-align: center;
+      margin-top: 10px;
+      font-weight: bold;
+      color: red;
+    }
+    .nav-button {
+  background: white;
+  color: #0077cc;
+  padding: 8px 16px;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: bold;
+  transition: background 0.3s;
+  border: none;
+  display: inline-block;
+}
+.nav-button:hover {
+  background: #e0e0e0;
+      }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>ChatBot Luka</h1>
+    <a href="https://GreenBlox-creator.github.io/GreenGPT/login/" class="nav-button">Powrót</a>
+  </header>
 
+  <div class="container">
+    <h2>Resetuj hasło</h2>
+    <form id="resetForm">
+      <input type="email" id="email" placeholder="Podaj swój email" required />
+      <button type="submit">Wyślij link resetujący</button>
+    </form>
+    <div id="message"></div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+    import { getAuth, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBd0tUpGORU1zOwXvANQ-K5Hnq_lGmaN_E",
+      authDomain: "greengpt-4d171.firebaseapp.com",
+      projectId: "greengpt-4d171",
+      storageBucket: "greengpt-4d171.firebasestorage.app",
+      messagingSenderId: "889983977683",
+      appId: "1:889983977683:web:770f1cb95edf4a594d2c26"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    const form = document.getElementById("resetForm");
+    const message = document.getElementById("message");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("email").value;
+
+      try {
+        await sendPasswordResetEmail(auth, email);
+        message.style.color = "green";
+        message.textContent = "Link resetujący został wysłany na podany email.";
+      } catch (error) {
+        message.style.color = "red";
+        message.textContent = "Błąd: " + error.message;
+      }
+    });
+  </script>
+</body>
+</html>
