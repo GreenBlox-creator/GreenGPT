@@ -42,7 +42,80 @@ body {
   overflow-y: auto; /* tylko czat się przewija */
   padding-right: 10px;
   margin-bottom: 10px;
-  }
+}
+    header {
+      background: #0077cc;
+      color: white;
+      padding: 15px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 20px;
+    }
+    header a {
+      background: white;
+      color: #0077cc;
+      padding: 8px 16px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+    header a:hover {
+      background: #e0e0e0;
+    }
+    .message {
+      margin-bottom: 12px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      max-width: 80%;
+      line-height: 1.4;
+    }
+    .user {
+      background: #d0eaff;
+      align-self: flex-end;
+      text-align: right;
+      margin-left: auto;
+    }
+    .bot {
+      background: #f1f1f1;
+      align-self: flex-start;
+    }
+    #inputArea {
+      display: flex;
+      flex-shrink: 0;
+    }
+    #userInput {
+      flex: 1;
+      padding: 12px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 6px 0 0 6px;
+      outline: none;
+    }
+    #sendBtn {
+      padding: 12px 20px;
+      font-size: 16px;
+      background: #0077cc;
+      color: white;
+      border: none;
+      border-radius: 0 6px 6px 0;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    #sendBtn:hover {
+      background: #005fa3;
+    }
+    #limitMsg {
+      margin-top: 5px;
+      font-weight: bold;
+      color: #cc0000;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
