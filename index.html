@@ -157,7 +157,7 @@ body {
 
       if (remaining <= 0) {
         const waitTime = Math.ceil((TIME_WINDOW - (now - messageTimes[0])) / 60000);
-        limitMsg.textContent = `Limit wiadomości osiągnięty. Poczekaj ${waitTime} minut.`;
+        limitMsg.textContent = `Limit wiadomości osiągnięty. Poczekaj ${waitTime} minut, Lub stwórz konto.`;
       } else {
         limitMsg.textContent = `Możesz wysłać jeszcze ${remaining} wiadomości.`;
       }
