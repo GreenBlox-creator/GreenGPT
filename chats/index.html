@@ -88,23 +88,57 @@
         });
       }
 
-      newChatBtn.onclick = async () => {
-  const errorBox = document.getElementById("errorBox");
-  errorBox.textContent = ""; // wyczyść poprzedni błąd
+      const chatList = document.getElementById("chatList");
+const newChatBtn = document.getElementById("newChatBtn");
+const errorBox = document.getElementById("errorBox");
+
+errorBox.textContent = "✅ Skrypt się załadował";
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    errorBox.textContent = "🚫 Nie jesteś zalogowany. Przekierowanie...";
+    window.location.href = "/login/";
+    return;
+  }
+
+  errorBox.textContent = "✅ Zalogowany jako: " + user.uid;
 
   try {
-    const docRef = await addDoc(collection(db, "czaty"), {
-      ownerId: user.uid,
-      createdAt: serverTimestamp(),
-      messages: [],
-      limit: 10
-    });
+    const q = query(collection(db, "czaty"), where("ownerId", "==", user.uid));
+    const querySnapshot = await getDocs(q);
 
-    window.location.href = `/czats/${docRef.id}`;
+    if (querySnapshot.empty) {
+      chatList.innerHTML = "<li>Brak czatów</li>";
+    } else {
+      querySnapshot.forEach(doc => {
+        const li = document.createElement("li");
+        li.textContent = "Czat #" + doc.id;
+        li.onclick = () => window.location.href = `/czats/${doc.id}`;
+        chatList.appendChild(li);
+      });
+    }
+
+    newChatBtn.onclick = async () => {
+      errorBox.textContent = "⏳ Tworzenie czatu...";
+
+      try {
+        const docRef = await addDoc(collection(db, "czaty"), {
+          ownerId: user.uid,
+          createdAt: serverTimestamp(),
+          messages: [],
+          limit: 10
+        });
+
+        errorBox.textContent = "✅ Czat utworzony! ID: " + docRef.id;
+        window.location.href = `/czats/${docRef.id}`;
+      } catch (error) {
+        errorBox.textContent = "❌ Błąd tworzenia czatu: " + error.message;
+      }
+    };
   } catch (error) {
-    errorBox.textContent = "❌ Błąd tworzenia czatu: " + error.message;
+    errorBox.textContent = "❌ Błąd pobierania czatów: " + error.message;
   }
-};                
+});            
     });
   </script>
 </body>
