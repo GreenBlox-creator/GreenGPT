@@ -135,7 +135,7 @@
     const MAX_MESSAGES = 5;
     const TIME_WINDOW = 10 * 60 * 1000;
 
-    fetch("data/data.json")
+    fetch("data.json")
       .then(res => res.json())
       .then(data => {
         responses = data;
