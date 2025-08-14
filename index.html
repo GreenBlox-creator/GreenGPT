@@ -1,31 +1,72 @@
 <!DOCTYPE html>
 <html lang="pl">
 <head>
-  <meta charset="UTF-8">
-  <title>Offline ChatBot</title>
+  <meta charset="UTF-8" />
+  <title>ChatBot Luka</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
+    * {
+      box-sizing: border-box;
+    }
     body {
-      font-family: sans-serif;
-      background: #eef;
-      padding: 20px;
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f4f8;
+      color: #333;
+    }
+    header {
+      background: #0077cc;
+      color: white;
+      padding: 15px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 20px;
+    }
+    header a {
+      background: white;
+      color: #0077cc;
+      padding: 8px 16px;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+    header a:hover {
+      background: #e0e0e0;
     }
     #chat {
-      max-width: 600px;
-      margin: auto;
-      background: #fff;
+      max-width: 700px;
+      margin: 30px auto;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
       padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    #chatBox {
+      height: 400px;
+      overflow-y: auto;
+      padding-right: 10px;
     }
     .message {
-      margin-bottom: 10px;
+      margin-bottom: 12px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      max-width: 80%;
+      line-height: 1.4;
     }
     .user {
-      color: blue;
-      font-weight: bold;
+      background: #d0eaff;
+      align-self: flex-end;
+      text-align: right;
+      margin-left: auto;
     }
     .bot {
-      color: green;
+      background: #f1f1f1;
+      align-self: flex-start;
     }
     #inputArea {
       display: flex;
@@ -33,91 +74,113 @@
     }
     #userInput {
       flex: 1;
-      padding: 10px;
+      padding: 12px;
       font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 6px 0 0 6px;
+      outline: none;
     }
     #sendBtn {
-      padding: 10px 20px;
+      padding: 12px 20px;
       font-size: 16px;
       background: #0077cc;
       color: white;
       border: none;
+      border-radius: 0 6px 6px 0;
       cursor: pointer;
+      transition: background 0.3s;
+    }
+    #sendBtn:hover {
+      background: #005fa3;
+    }
+    #limitMsg {
+      margin-top: 10px;
+      font-weight: bold;
+      color: #cc0000;
+      text-align: center;
     }
   </style>
 </head>
 <body>
+  <header>
+    <h1>GreenGPT</h1>
+    <a href="/login/">Zaloguj się</a>
+  </header>
+
   <div id="chat">
-    <h2>Offline ChatBot</h2>
-    <p id="limitMsg" style="color: red; font-weight: bold;"></p>
     <div id="chatBox"></div>
     <div id="inputArea">
-      <input type="text" id="userInput" placeholder="Napisz coś..." />
+      <input type="text" id="userInput" placeholder="Napisz wiadomość..." />
       <button id="sendBtn">Wyślij</button>
     </div>
+    <p id="limitMsg"></p>
   </div>
 
   <script>
-  let responses = {};
-  let messageTimes = []; // czas wysłania każdej wiadomości (timestamp)
-  const MAX_MESSAGES = 2;
-  const TIME_WINDOW = 10 * 60 * 1000; // 10 minut w milisekundach
+    let responses = {};
+    let messageTimes = [];
+    const MAX_MESSAGES = 5;
+    const TIME_WINDOW = 10 * 60 * 1000;
 
-  fetch("data.json")
-    .then(res => res.json())
-    .then(data => {
-      responses = data;
+    fetch("data.json")
+      .then(res => res.json())
+      .then(data => {
+        responses = data;
+      });
+
+    const chatBox = document.getElementById("chatBox");
+    const userInput = document.getElementById("userInput");
+    const sendBtn = document.getElementById("sendBtn");
+    const limitMsg = document.getElementById("limitMsg");
+
+    function updateLimitMessage() {
+      const now = Date.now();
+      messageTimes = messageTimes.filter(t => now - t < TIME_WINDOW);
+      const remaining = MAX_MESSAGES - messageTimes.length;
+
+      if (remaining <= 0) {
+        const waitTime = Math.ceil((TIME_WINDOW - (now - messageTimes[0])) / 60000);
+        limitMsg.textContent = `Limit wiadomości osiągnięty. Poczekaj ${waitTime} minut.`;
+      } else {
+        limitMsg.textContent = `Możesz wysłać jeszcze ${remaining} wiadomości.`;
+      }
+    }
+
+    function sendMessage() {
+      const now = Date.now();
+      messageTimes = messageTimes.filter(t => now - t < TIME_WINDOW);
+
+      if (messageTimes.length >= MAX_MESSAGES) {
+        updateLimitMessage();
+        return;
+      }
+
+      const message = userInput.value.trim().toLowerCase();
+      if (!message) return;
+
+      const userMsg = document.createElement("div");
+      userMsg.className = "message user";
+      userMsg.textContent = message;
+      chatBox.appendChild(userMsg);
+
+      const reply = responses[message] || "Nie rozumiem... 😕";
+      const botMsg = document.createElement("div");
+      botMsg.className = "message bot";
+      botMsg.textContent = reply;
+      chatBox.appendChild(botMsg);
+
+      chatBox.scrollTop = chatBox.scrollHeight;
+      userInput.value = "";
+      messageTimes.push(now);
+      updateLimitMessage();
+    }
+
+    sendBtn.addEventListener("click", sendMessage);
+    userInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") sendMessage();
     });
 
-  const chatBox = document.getElementById("chatBox");
-  const userInput = document.getElementById("userInput");
-  const sendBtn = document.getElementById("sendBtn");
-
-  function updateLimitMessage() {
-    const now = Date.now();
-    messageTimes = messageTimes.filter(t => now - t < TIME_WINDOW);
-    const remaining = MAX_MESSAGES - messageTimes.length;
-
-    const limitMsg = document.getElementById("limitMsg");
-    if (remaining <= 0) {
-      const waitTime = Math.ceil((TIME_WINDOW - (now - messageTimes[0])) / 60000);
-      limitMsg.textContent = `Limit wiadomości osiągnięty. Poczekaj ${waitTime} minut.`;
-    } else {
-      limitMsg.textContent = `Możesz wysłać jeszcze ${remaining} wiadomości.`;
-    }
-  }
-
-  function sendMessage() {
-    const now = Date.now();
-    messageTimes = messageTimes.filter(t => now - t < TIME_WINDOW);
-
-    if (messageTimes.length >= MAX_MESSAGES) {
-      updateLimitMessage();
-      return;
-    }
-
-    const message = userInput.value.trim().toLowerCase();
-    if (!message) return;
-
-    chatBox.innerHTML += `<div class="message"><span class="user">Ty:</span> ${message}</div>`;
-    userInput.value = "";
-
-    let reply = responses[message] || "Nie rozumiem... 😕";
-    chatBox.innerHTML += `<div class="message"><span class="bot">Bot:</span> ${reply}</div>`;
-    chatBox.scrollTop = chatBox.scrollHeight;
-
-    messageTimes.push(now);
-    updateLimitMessage();
-  }
-
-  sendBtn.addEventListener("click", sendMessage);
-  userInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") sendMessage();
-  });
-
-  // Aktualizuj licznik co minutę
-  setInterval(updateLimitMessage, 60000);
-</script>
-
+    setInterval(updateLimitMessage, 60000);
+  </script>
 </body>
 </html>
