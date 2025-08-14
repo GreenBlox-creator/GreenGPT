@@ -88,7 +88,8 @@
       }
 
       newChatBtn.onclick = async () => {
-  alert("Próba utworzenia czatu...");
+  const errorBox = document.getElementById("errorBox");
+  errorBox.textContent = ""; // wyczyść poprzedni błąd
 
   try {
     const docRef = await addDoc(collection(db, "czaty"), {
@@ -98,12 +99,11 @@
       limit: 10
     });
 
-    alert("Czat utworzony! ID: " + docRef.id);
     window.location.href = `/czats/${docRef.id}`;
   } catch (error) {
-    alert("❌ Błąd: " + error.message);
+    errorBox.textContent = "❌ Błąd tworzenia czatu: " + error.message;
   }
-};                 
+};                
     });
   </script>
 </body>
