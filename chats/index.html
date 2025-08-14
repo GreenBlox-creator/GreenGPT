@@ -88,14 +88,22 @@
       }
 
       newChatBtn.onclick = async () => {
-        const docRef = await addDoc(collection(db, "czaty"), {
-          ownerId: user.uid,
-          createdAt: serverTimestamp(),
-          messages: [],
-          limit: 10
-        });
-        window.location.href = `/czats/${docRef.id}`;
-      };
+  alert("Próba utworzenia czatu...");
+
+  try {
+    const docRef = await addDoc(collection(db, "czaty"), {
+      ownerId: user.uid,
+      createdAt: serverTimestamp(),
+      messages: [],
+      limit: 10
+    });
+
+    alert("Czat utworzony! ID: " + docRef.id);
+    window.location.href = `/czats/${docRef.id}`;
+  } catch (error) {
+    alert("❌ Błąd: " + error.message);
+  }
+};                 
     });
   </script>
 </body>
