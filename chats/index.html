@@ -87,17 +87,17 @@
           chatList.appendChild(li);
         });
       }
-
-      const chatList = document.getElementById("chatList");
-const newChatBtn = document.getElementById("newChatBtn");
 const errorBox = document.getElementById("errorBox");
 
 errorBox.textContent = "✅ Skrypt się załadował";
 
 onAuthStateChanged(auth, async (user) => {
+  const errorBox = document.getElementById("errorBox");
+  errorBox.textContent = "✅ Skrypt się załadował";
+
   if (!user) {
     errorBox.textContent = "🚫 Nie jesteś zalogowany. Przekierowanie...";
-    window.location.href = "/login/";
+    window.location.href = "/GreenGPT/login/";
     return;
   }
 
@@ -138,7 +138,7 @@ onAuthStateChanged(auth, async (user) => {
   } catch (error) {
     errorBox.textContent = "❌ Błąd pobierania czatów: " + error.message;
   }
-});            
+});
     });
   </script>
 </body>
