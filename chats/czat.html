@@ -90,12 +90,18 @@ let usedCredits = 0;
     function updateCreditBar() {
   const remaining = maxCredits - usedCredits;
   const percent = (remaining / maxCredits) * 100;
-  document.getElementById("creditLabel").textContent = `Pozostało: ${remaining} z ${maxCredits} kredytów`;
-  document.getElementById("creditFill").style.width = percent + "%";
 
-  if (remaining <= 0) {
-    sendBtn.disabled = true;
-    sendBtn.textContent = "Brak kredytów 😢";
+  const label = document.getElementById("creditLabel");
+  const fill = document.getElementById("creditFill");
+
+  if (label && fill) {
+    label.textContent = `Pozostało: ${remaining} z ${maxCredits} kredytów`;
+    fill.style.width = percent + "%";
+
+    if (remaining <= 0) {
+      sendBtn.disabled = true;
+      sendBtn.textContent = "Brak kredytów 😢";
+    }
   }
     }
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
