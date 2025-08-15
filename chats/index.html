@@ -48,32 +48,39 @@
   </main>
 
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
-    import { getFirestore, collection, addDoc, query, where, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+  import { getFirestore, collection, addDoc, query, where, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyBd0tUpGORU1zOwXvANQ-K5Hnq_lGmaN_E",
-      authDomain: "greengpt-4d171.firebaseapp.com",
-      projectId: "greengpt-4d171",
-      storageBucket: "greengpt-4d171.appspot.com",
-      messagingSenderId: "889983977683",
-      appId: "1:889983977683:web:770f1cb95edf4a594d2c26"
-    };
+  const firebaseConfig = {
+    apiKey: "AIzaSyBd0tUpGORU1zOwXvANQ-K5Hnq_lGmaN_E",
+    authDomain: "greengpt-4d171.firebaseapp.com",
+    projectId: "greengpt-4d171",
+    storageBucket: "greengpt-4d171.appspot.com",
+    messagingSenderId: "889983977683",
+    appId: "1:889983977683:web:770f1cb95edf4a594d2c26"
+  };
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
 
-    const chatList = document.getElementById("chatList");
-    const newChatBtn = document.getElementById("newChatBtn");
+  const chatList = document.getElementById("chatList");
+  const newChatBtn = document.getElementById("newChatBtn");
+  const errorBox = document.getElementById("errorBox");
 
-    onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        window.location.href = "/login/";
-        return;
-      }
+  errorBox.textContent = "✅ Skrypt się załadował";
 
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+      errorBox.textContent = "🚫 Nie jesteś zalogowany. Przekierowanie...";
+      window.location.href = "/GreenGPT/login/";
+      return;
+    }
+
+    errorBox.textContent = "✅ Zalogowany jako: " + user.uid;
+
+    try {
       const q = query(collection(db, "czaty"), where("ownerId", "==", user.uid));
       const querySnapshot = await getDocs(q);
 
@@ -87,59 +94,28 @@
           chatList.appendChild(li);
         });
       }
-const errorBox = document.getElementById("errorBox");
 
-errorBox.textContent = "✅ Skrypt się załadował";
+      newChatBtn.onclick = async () => {
+        errorBox.textContent = "⏳ Tworzenie czatu...";
 
-onAuthStateChanged(auth, async (user) => {
-  const errorBox = document.getElementById("errorBox");
-  errorBox.textContent = "✅ Skrypt się załadował";
+        try {
+          const docRef = await addDoc(collection(db, "czaty"), {
+            ownerId: user.uid,
+            createdAt: serverTimestamp(),
+            messages: [],
+            limit: 10
+          });
 
-  if (!user) {
-    errorBox.textContent = "🚫 Nie jesteś zalogowany. Przekierowanie...";
-    window.location.href = "/GreenGPT/login/";
-    return;
-  }
-
-  errorBox.textContent = "✅ Zalogowany jako: " + user.uid;
-
-  try {
-    const q = query(collection(db, "czaty"), where("ownerId", "==", user.uid));
-    const querySnapshot = await getDocs(q);
-
-    if (querySnapshot.empty) {
-      chatList.innerHTML = "<li>Brak czatów</li>";
-    } else {
-      querySnapshot.forEach(doc => {
-        const li = document.createElement("li");
-        li.textContent = "Czat #" + doc.id;
-        li.onclick = () => window.location.href = `/czats/${doc.id}`;
-        chatList.appendChild(li);
-      });
+          errorBox.textContent = "✅ Czat utworzony! ID: " + docRef.id;
+          window.location.href = `/czats/${docRef.id}`;
+        } catch (error) {
+          errorBox.textContent = "❌ Błąd tworzenia czatu: " + error.message;
+        }
+      };
+    } catch (error) {
+      errorBox.textContent = "❌ Błąd pobierania czatów: " + error.message;
     }
-
-    newChatBtn.onclick = async () => {
-      errorBox.textContent = "⏳ Tworzenie czatu...";
-
-      try {
-        const docRef = await addDoc(collection(db, "czaty"), {
-          ownerId: user.uid,
-          createdAt: serverTimestamp(),
-          messages: [],
-          limit: 10
-        });
-
-        errorBox.textContent = "✅ Czat utworzony! ID: " + docRef.id;
-        window.location.href = `/czats/${docRef.id}`;
-      } catch (error) {
-        errorBox.textContent = "❌ Błąd tworzenia czatu: " + error.message;
-      }
-    };
-  } catch (error) {
-    errorBox.textContent = "❌ Błąd pobierania czatów: " + error.message;
-  }
-});
-    });
+  });
   </script>
 </body>
 </html>
