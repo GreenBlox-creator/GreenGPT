@@ -87,6 +87,17 @@
   <script type="module">
     let maxCredits = 1000;
 let usedCredits = 0;
+    function updateCreditBar() {
+  const remaining = maxCredits - usedCredits;
+  const percent = (remaining / maxCredits) * 100;
+  document.getElementById("creditLabel").textContent = `Pozostało: ${remaining} z ${maxCredits} kredytów`;
+  document.getElementById("creditFill").style.width = percent + "%";
+
+  if (remaining <= 0) {
+    sendBtn.disabled = true;
+    sendBtn.textContent = "Brak kredytów 😢";
+  }
+    }
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
     import { getFirestore, collection, doc, getDoc, getDocs, addDoc, updateDoc, arrayUnion, serverTimestamp, query, where } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
