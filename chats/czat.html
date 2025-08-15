@@ -175,6 +175,15 @@ let usedCredits = 0;
       
       sendBtn.onclick = async () => {
         const text = textInput.value.trim();
+        let creditCost = text.length; // 1 znak = 1 kredyt
+
+// Jeśli użytkownik prosi o wygenerowanie obrazu
+if (text.toLowerCase().includes("wygeneruj obraz") || text.toLowerCase().includes("generuj obraz")) {
+  creditCost = 100;
+}
+
+usedCredits += creditCost;
+updateCreditBar();
         if (!text) return;
 
         await updateDoc(chatRef, {
