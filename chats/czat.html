@@ -212,6 +212,8 @@ updateCreditBar();
 
         const data = await res.json();
         const imageUrl = data.secure_url;
+        usedCredits += 50;
+updateCreditBar();
 
         await updateDoc(chatRef, {
           messages: arrayUnion(imageUrl)
