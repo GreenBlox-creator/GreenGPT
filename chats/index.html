@@ -90,7 +90,7 @@
         querySnapshot.forEach(doc => {
           const li = document.createElement("li");
           li.textContent = "Czat #" + doc.id;
-          li.onclick = () => window.location.href = `/czats/${doc.id}`;
+          li.onclick = () => window.location.href = `https://GreenBlox-creator.github.io/GreenGPT/chats/czat?id=${doc.id}`;
           chatList.appendChild(li);
         });
       }
@@ -107,7 +107,7 @@
           });
 
           errorBox.textContent = "✅ Czat utworzony! ID: " + docRef.id;
-          window.location.href = `/czats/${docRef.id}`;
+          window.location.href = `https://GreenBlox-creator.github.io/GreenGPT/czats/czat.html?id=${docRef.id}`;
         } catch (error) {
           errorBox.textContent = "❌ Błąd tworzenia czatu: " + error.message;
         }
