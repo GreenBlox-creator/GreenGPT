@@ -212,6 +212,15 @@ updateCreditBar();
         div.textContent = text;
         messagesDiv.appendChild(div);
         textInput.value = "";
+        const botReply = generateBotReply(text);
+await updateDoc(chatRef, {
+  messages: arrayUnion(botReply)
+});
+
+const botDiv = document.createElement("div");
+botDiv.className = "message";
+botDiv.textContent = botReply;
+messagesDiv.appendChild(botDiv);
       };
 
       imageUpload.addEventListener("change", async (e) => {
