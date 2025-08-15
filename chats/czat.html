@@ -163,6 +163,14 @@
         messagesDiv.appendChild(div);
       });
 
+      function generateBotReply(userText) {
+  const lower = userText.toLowerCase();
+  if (lower.includes("siema") || lower.includes("cześć")) return "Hejka! Miło Cię widzieć 😄";
+  if (lower.includes("jak się masz")) return "Dobrze, dzięki że pytasz! A Ty?";
+  if (lower.includes("obraz")) return "Chcesz, żebym coś wygenerował? Powiedz mi co!";
+  return "Nie jestem pewien co odpowiedzieć, ale jestem tu dla Ciebie!";
+      }
+      
       sendBtn.onclick = async () => {
         const text = textInput.value.trim();
         if (!text) return;
